@@ -1,32 +1,33 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Submission, SubmissionDocument } from '../submission.schema';
+import { SubmissionDocument } from '../submission.schema';
 import { CreateSubmissionDto } from '../dtos/create-submission.dto';
 import { UpdateSubmissionDto } from '../dtos/update-submission.dto';
+import { SubmissionRepository } from '../repository';
 import { AccessControlService } from '../../../shared/access-control';
 
 @Injectable()
 export class SubmissionService {
   constructor(
-    @InjectModel(Submission.name)
-    private readonly submissionModel: Model<SubmissionDocument>,
+    private readonly submissionRepo: SubmissionRepository,
     private readonly accessControl: AccessControlService,
   ) {}
 
   async create(dto: CreateSubmissionDto): Promise<SubmissionDocument> {
     this.accessControl.authorize('Create', 'Submission');
-    return this.submissionModel.create(dto);
+    return this.submissionRepo.create(dto);
   }
 
   async findAll(spaceId: string): Promise<SubmissionDocument[]> {
     const filter = this.accessControl.getAccessibleQuery('Read', 'Submission');
-    return this.submissionModel.find({ $and: [{ spaceId }, filter ?? {}] });
+    return this.submissionRepo.findAll({
+      $and: [{ spaceId }, filter ?? {}],
+    });
   }
 
   async findOne(id: string): Promise<SubmissionDocument> {
-    this.accessControl.authorize('Read', 'Submission', { id });
-    return this.submissionModel.findById(id).orFail();
+    const submission = await this.submissionRepo.findById(id);
+    this.accessControl.authorize('Read', 'Submission', submission.toObject());
+    return submission;
   }
 
   async update(
@@ -34,20 +35,14 @@ export class SubmissionService {
     dto: UpdateSubmissionDto,
   ): Promise<SubmissionDocument> {
     this.accessControl.authorize('Update', 'Submission', { id });
-    return this.submissionModel
-      .findByIdAndUpdate(id, { $set: dto }, { new: true })
-      .orFail();
+    return this.submissionRepo.update(id, dto);
   }
 
   async toggleLogin(id: string): Promise<SubmissionDocument> {
     this.accessControl.authorize('ToggleLogin', 'Submission', { id });
-    const doc = await this.submissionModel.findById(id).orFail();
-    return this.submissionModel
-      .findByIdAndUpdate(
-        id,
-        { $set: { loginRequired: !doc.loginRequired } },
-        { new: true },
-      )
-      .orFail();
+    const doc = await this.submissionRepo.findById(id);
+    return this.submissionRepo.updateField(id, {
+      loginRequired: !doc.loginRequired,
+    });
   }
 }

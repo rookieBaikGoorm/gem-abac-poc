@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Submission, SubmissionSchema } from './submission.schema';
+import { SubmissionRepository } from './repository';
 import { SubmissionService } from './service';
 import { SubmissionController } from './submission.controller';
 import { AccessControlModule } from '../../shared/access-control';
@@ -13,7 +14,7 @@ import { AccessControlModule } from '../../shared/access-control';
     AccessControlModule,
   ],
   controllers: [SubmissionController],
-  providers: [SubmissionService],
+  providers: [SubmissionRepository, SubmissionService],
   exports: [SubmissionService, MongooseModule],
 })
 export class SubmissionModule {}

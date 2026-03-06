@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Space, SpaceSchema } from './space.schema';
+import { SpaceRepository } from './repository';
 import { SpaceService } from './service';
 import { SpaceController } from './space.controller';
 import { AccessControlModule } from '../../shared/access-control';
@@ -11,7 +12,7 @@ import { AccessControlModule } from '../../shared/access-control';
     AccessControlModule,
   ],
   controllers: [SpaceController],
-  providers: [SpaceService],
+  providers: [SpaceRepository, SpaceService],
   exports: [SpaceService, MongooseModule],
 })
 export class SpaceModule {}

@@ -1,20 +1,17 @@
 import * as bcrypt from 'bcryptjs';
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '../user.schema';
+import { User } from '../user.schema';
+import { UserRepository } from '../repository';
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-  ) {}
+  constructor(private readonly userRepo: UserRepository) {}
 
   async findOneByEmailAndPassword(
     email: string,
     password: string,
   ): Promise<User | null> {
-    const user = await this.userModel.findOne({ email });
+    const user = await this.userRepo.findByEmail(email);
     if (user) {
       const match = await bcrypt.compare(password, user.password);
       return match ? { ...user.toObject(), password: null } : null;
@@ -23,7 +20,7 @@ export class UserService {
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
-    return this.userModel.findOne({ email }).select({ password: 0 });
+    return this.userRepo.findByEmailExcludePassword(email);
   }
 
   async create(
@@ -31,8 +28,8 @@ export class UserService {
     password: string,
     role: string,
     spaceId?: string,
-  ): Promise<UserDocument> {
+  ) {
     const hash = await bcrypt.hash(password, 10);
-    return this.userModel.create({ email, password: hash, role, spaceId });
+    return this.userRepo.create({ email, password: hash, role, spaceId });
   }
 }

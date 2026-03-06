@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Course, CourseSchema } from './course.schema';
+import { CourseRepository } from './repository';
 import { CourseService } from './service';
 import { CourseController } from './course.controller';
 import { AccessControlModule } from '../../shared/access-control';
@@ -11,7 +12,7 @@ import { AccessControlModule } from '../../shared/access-control';
     AccessControlModule,
   ],
   controllers: [CourseController],
-  providers: [CourseService],
+  providers: [CourseRepository, CourseService],
   exports: [CourseService, MongooseModule],
 })
 export class CourseModule {}

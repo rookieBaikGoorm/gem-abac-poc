@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Policy, PolicySchema } from './policy.schema';
+import { PolicyRepository } from './repository';
 import { PolicyService } from './service';
 import { PolicyController } from './policy.controller';
 import { AccessControlModule } from '../../shared/access-control';
@@ -11,7 +12,7 @@ import { AccessControlModule } from '../../shared/access-control';
     AccessControlModule,
   ],
   controllers: [PolicyController],
-  providers: [PolicyService],
+  providers: [PolicyRepository, PolicyService],
   exports: [PolicyService, MongooseModule],
 })
 export class PolicyModule {}

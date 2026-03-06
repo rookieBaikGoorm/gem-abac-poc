@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SharedModule } from './shared/shared.module';
+import { AuthGuardModule } from './shared/auth-guard';
 import { AuthModule } from './domain/auth/auth.module';
 import { SpaceModule } from './domain/space/space.module';
 import { CourseModule } from './domain/course/course.module';
@@ -23,6 +24,7 @@ import { PolicyModule } from './domain/policy/policy.module';
       }),
     }),
     SharedModule,
+    AuthGuardModule,
     AuthModule,
     SpaceModule,
     CourseModule,

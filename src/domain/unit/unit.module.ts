@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Unit, UnitSchema } from './unit.schema';
+import { UnitRepository } from './repository';
 import { UnitService } from './service';
 import { UnitController } from './unit.controller';
 import { AccessControlModule } from '../../shared/access-control';
@@ -11,7 +12,7 @@ import { AccessControlModule } from '../../shared/access-control';
     AccessControlModule,
   ],
   controllers: [UnitController],
-  providers: [UnitService],
+  providers: [UnitRepository, UnitService],
   exports: [UnitService, MongooseModule],
 })
 export class UnitModule {}
