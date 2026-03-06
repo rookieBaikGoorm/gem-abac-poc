@@ -3,7 +3,11 @@ import { UnitDocument } from '../unit.schema';
 import { CreateUnitDto } from '../dtos/create-unit.dto';
 import { UpdateUnitDto } from '../dtos/update-unit.dto';
 import { UnitRepository } from '../repository';
-import { AccessControlService } from '../../../shared/access-control';
+import {
+  AccessControlService,
+  UnitAction,
+  Subject,
+} from '../../../shared/access-control';
 
 @Injectable()
 export class UnitService {
@@ -17,25 +21,40 @@ export class UnitService {
   }
 
   async findAll(spaceId: string): Promise<UnitDocument[]> {
-    const filter = this.accessControl.getAccessibleQuery('Read', 'Unit');
+    const filter = this.accessControl.getAccessibleQuery({
+      action: UnitAction.READ,
+      subject: Subject.UNIT,
+    });
     return this.unitRepo.findAll({ $and: [{ spaceId }, filter ?? {}] });
   }
 
   async findOne(id: string): Promise<UnitDocument> {
     const unit = await this.unitRepo.findById(id);
-    this.accessControl.authorize('Read', 'Unit', unit.toObject());
+    this.accessControl.authorize({
+      action: UnitAction.READ,
+      subject: Subject.UNIT,
+      resource: unit.toObject(),
+    });
     return unit;
   }
 
   async update(id: string, dto: UpdateUnitDto): Promise<UnitDocument> {
     const unit = await this.unitRepo.findById(id);
-    this.accessControl.authorize('Update', 'Unit', unit.toObject());
+    this.accessControl.authorize({
+      action: UnitAction.UPDATE,
+      subject: Subject.UNIT,
+      resource: unit.toObject(),
+    });
     return this.unitRepo.update(id, dto);
   }
 
   async clone(id: string): Promise<UnitDocument> {
     const original = await this.unitRepo.findById(id);
-    this.accessControl.authorize('Clone', 'Unit', original.toObject());
+    this.accessControl.authorize({
+      action: UnitAction.CLONE,
+      subject: Subject.UNIT,
+      resource: original.toObject(),
+    });
     const { id: _, ...data } = original.toObject();
     return this.unitRepo.create({
       ...data,
@@ -48,7 +67,11 @@ export class UnitService {
     submissionId: string,
   ): Promise<UnitDocument> {
     const unit = await this.unitRepo.findById(id);
-    this.accessControl.authorize('LinkSubmission', 'Unit', unit.toObject());
+    this.accessControl.authorize({
+      action: UnitAction.LINK_SUBMISSION,
+      subject: Subject.UNIT,
+      resource: unit.toObject(),
+    });
     return this.unitRepo.updateField(id, { submissionId });
   }
 }

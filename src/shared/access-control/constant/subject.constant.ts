@@ -6,6 +6,7 @@ export const Subject = {
   USER: 'User',
   GROUP: 'Group',
   POLICY: 'Policy',
+  /** CASL reserved keyword — 반드시 소문자 'all' 사용. 모든 Subject의 와일드카드로 동작한다. */
   ALL: 'all',
 } as const;
 

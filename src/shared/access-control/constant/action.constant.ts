@@ -3,7 +3,8 @@ export const CrudAction = {
   READ: 'Read',
   UPDATE: 'Update',
   DELETE: 'Delete',
-  MANAGE: 'Manage',
+  /** CASL reserved keyword — 반드시 소문자 'manage' 사용. 모든 Action의 슈퍼셋으로 동작한다. */
+  MANAGE: 'manage',
 } as const;
 
 export const SpaceAction = {

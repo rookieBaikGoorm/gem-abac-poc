@@ -3,7 +3,11 @@ import { SpaceDocument } from '../space.schema';
 import { CreateSpaceDto } from '../dtos/create-space.dto';
 import { UpdateSpaceDto } from '../dtos/update-space.dto';
 import { SpaceRepository } from '../repository';
-import { AccessControlService } from '../../../shared/access-control';
+import {
+  AccessControlService,
+  SpaceAction,
+  Subject,
+} from '../../../shared/access-control';
 
 @Injectable()
 export class SpaceService {
@@ -17,19 +21,30 @@ export class SpaceService {
   }
 
   async findAll(): Promise<SpaceDocument[]> {
-    const filter = this.accessControl.getAccessibleQuery('Read', 'Space');
+    const filter = this.accessControl.getAccessibleQuery({
+      action: SpaceAction.READ,
+      subject: Subject.SPACE,
+    });
     return this.spaceRepo.findAll(filter ?? {});
   }
 
   async findOne(id: string): Promise<SpaceDocument> {
     const space = await this.spaceRepo.findById(id);
-    this.accessControl.authorize('Read', 'Space', space.toObject());
+    this.accessControl.authorize({
+      action: SpaceAction.READ,
+      subject: Subject.SPACE,
+      resource: space.toObject(),
+    });
     return space;
   }
 
   async update(id: string, dto: UpdateSpaceDto): Promise<SpaceDocument> {
     const space = await this.spaceRepo.findById(id);
-    this.accessControl.authorize('Update', 'Space', space.toObject());
+    this.accessControl.authorize({
+      action: SpaceAction.UPDATE,
+      subject: Subject.SPACE,
+      resource: space.toObject(),
+    });
     return this.spaceRepo.update(id, dto);
   }
 }

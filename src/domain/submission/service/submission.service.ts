@@ -3,7 +3,11 @@ import { SubmissionDocument } from '../submission.schema';
 import { CreateSubmissionDto } from '../dtos/create-submission.dto';
 import { UpdateSubmissionDto } from '../dtos/update-submission.dto';
 import { SubmissionRepository } from '../repository';
-import { AccessControlService } from '../../../shared/access-control';
+import {
+  AccessControlService,
+  SubmissionAction,
+  Subject,
+} from '../../../shared/access-control';
 
 @Injectable()
 export class SubmissionService {
@@ -17,7 +21,10 @@ export class SubmissionService {
   }
 
   async findAll(spaceId: string): Promise<SubmissionDocument[]> {
-    const filter = this.accessControl.getAccessibleQuery('Read', 'Submission');
+    const filter = this.accessControl.getAccessibleQuery({
+      action: SubmissionAction.READ,
+      subject: Subject.SUBMISSION,
+    });
     return this.submissionRepo.findAll({
       $and: [{ spaceId }, filter ?? {}],
     });
@@ -25,7 +32,11 @@ export class SubmissionService {
 
   async findOne(id: string): Promise<SubmissionDocument> {
     const submission = await this.submissionRepo.findById(id);
-    this.accessControl.authorize('Read', 'Submission', submission.toObject());
+    this.accessControl.authorize({
+      action: SubmissionAction.READ,
+      subject: Subject.SUBMISSION,
+      resource: submission.toObject(),
+    });
     return submission;
   }
 
@@ -34,17 +45,21 @@ export class SubmissionService {
     dto: UpdateSubmissionDto,
   ): Promise<SubmissionDocument> {
     const submission = await this.submissionRepo.findById(id);
-    this.accessControl.authorize('Update', 'Submission', submission.toObject());
+    this.accessControl.authorize({
+      action: SubmissionAction.UPDATE,
+      subject: Subject.SUBMISSION,
+      resource: submission.toObject(),
+    });
     return this.submissionRepo.update(id, dto);
   }
 
   async toggleLogin(id: string): Promise<SubmissionDocument> {
     const submission = await this.submissionRepo.findById(id);
-    this.accessControl.authorize(
-      'ToggleLogin',
-      'Submission',
-      submission.toObject(),
-    );
+    this.accessControl.authorize({
+      action: SubmissionAction.TOGGLE_LOGIN,
+      subject: Subject.SUBMISSION,
+      resource: submission.toObject(),
+    });
     return this.submissionRepo.updateField(id, {
       loginRequired: !submission.loginRequired,
     });

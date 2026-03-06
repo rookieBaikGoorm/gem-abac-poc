@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { createMongoAbility, AbilityBuilder } from '@casl/ability';
 import { AppAbility, PolicyRule } from '../interface';
-import { Effect } from '../constant';
+import {
+  Effect,
+  CrudAction,
+  Subject as SubjectConst,
+  type Action,
+  type Subject,
+} from '../constant';
 
 @Injectable()
 export class CaslAbilityFactory {
@@ -40,7 +46,7 @@ export class CaslAbilityFactory {
     rule: PolicyRule,
     method: 'can' | 'cannot',
   ): void {
-    const subject = rule.subject === '*' ? 'all' : rule.subject;
+    const subject = rule.subject === '*' ? SubjectConst.ALL : rule.subject;
 
     const conditions: Record<string, any> = {};
     if (!rule.resources.includes('*')) {
@@ -53,8 +59,10 @@ export class CaslAbilityFactory {
     const cond = Object.keys(conditions).length > 0 ? conditions : undefined;
 
     for (const actionName of rule.actions) {
-      const action = actionName === '*' ? 'manage' : actionName;
-      builder[method](action, subject, cond);
+      const action = (
+        actionName === '*' ? CrudAction.MANAGE : actionName
+      ) as Action;
+      builder[method](action, subject as Subject, cond);
     }
   }
 }
