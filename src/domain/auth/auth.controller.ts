@@ -1,6 +1,5 @@
-import { Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { AuthService } from './service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
 import { Public } from '../../shared/decorator';
 
 @Controller('auth')
@@ -8,10 +7,10 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Public()
-  @UseGuards(LocalAuthGuard)
   @HttpCode(200)
   @Post('login')
-  async login(@Req() req: any) {
-    return this.authService.login(req.user);
+  async login(@Body() body: { email: string; password: string }) {
+    const user = await this.authService.validateUser(body.email, body.password);
+    return this.authService.login(user);
   }
 }
