@@ -1,37 +1,23 @@
-import { subject as caslSubject } from '@casl/ability';
 import { PolicyHandler } from './policy-handler.interface';
 import { AppAbility } from '../interface';
 import { type Action } from '../constant/action.constant';
 import { type Subject } from '../constant/subject.constant';
 
-interface ScopeOptions {
+interface PolicyOptions {
   action: Action;
   subject: Subject;
 }
 
-interface ResourceOptions extends ScopeOptions {
-  param?: string;
-}
-
+/**
+ * Guard 레벨의 PolicyHandler 생성 팩토리.
+ * 해당 action+subject 에 대한 룰이 존재하는지만 확인한다 (conditions 무시).
+ * 리소스 단위의 세밀한 검증은 Service 레이어에서 처리한다.
+ */
 export class PolicyHandlerFactory {
-  static createForScope({ action, subject }: ScopeOptions): PolicyHandler {
+  static create({ action, subject }: PolicyOptions): PolicyHandler {
     return {
       handle(ability: AppAbility): boolean {
-        return ability.can(action, caslSubject(subject, {}));
-      },
-    };
-  }
-
-  static createForResource({
-    action,
-    subject,
-    param = 'id',
-  }: ResourceOptions): PolicyHandler {
-    return {
-      handle(ability: AppAbility, params?: Record<string, string>): boolean {
-        const id = params?.[param];
-        if (!id) return false;
-        return ability.can(action, caslSubject(subject, { id }));
+        return ability.can(action, subject);
       },
     };
   }

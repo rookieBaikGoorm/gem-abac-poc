@@ -13,7 +13,6 @@ export class CourseService {
   ) {}
 
   async create(dto: CreateCourseDto): Promise<CourseDocument> {
-    this.accessControl.authorize('Create', 'Course');
     return this.courseRepo.create(dto);
   }
 
@@ -29,7 +28,8 @@ export class CourseService {
   }
 
   async update(id: string, dto: UpdateCourseDto): Promise<CourseDocument> {
-    this.accessControl.authorize('Update', 'Course', { id });
+    const course = await this.courseRepo.findById(id);
+    this.accessControl.authorize('Update', 'Course', course.toObject());
     return this.courseRepo.update(id, dto);
   }
 }

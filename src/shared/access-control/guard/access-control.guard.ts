@@ -31,7 +31,6 @@ export class AccessControlGuard implements CanActivate {
     const ability = this.clsService.get<AppAbility>('ability');
     if (!ability) return false;
 
-    const { params } = context.switchToHttp().getRequest();
-    return handlers.every((handler) => handler.handle(ability, params));
+    return handlers.every((handler) => handler.handle(ability));
   }
 }

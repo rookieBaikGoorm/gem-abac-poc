@@ -6,7 +6,6 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { SubmissionService } from './service';
 import { CreateSubmissionDto } from './dtos/create-submission.dto';
@@ -14,20 +13,17 @@ import { UpdateSubmissionDto } from './dtos/update-submission.dto';
 import {
   CheckPolicies,
   PolicyHandlerFactory,
-  AccessControlGuard,
   SubmissionAction,
   Subject,
 } from '../../shared/access-control';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('submissions')
-@UseGuards(JwtAuthGuard, AccessControlGuard)
 export class SubmissionController {
   constructor(private readonly submissionService: SubmissionService) {}
 
   @Post()
   @CheckPolicies(
-    PolicyHandlerFactory.createForScope({
+    PolicyHandlerFactory.create({
       action: SubmissionAction.CREATE,
       subject: Subject.SUBMISSION,
     }),
@@ -38,7 +34,7 @@ export class SubmissionController {
 
   @Get()
   @CheckPolicies(
-    PolicyHandlerFactory.createForScope({
+    PolicyHandlerFactory.create({
       action: SubmissionAction.READ,
       subject: Subject.SUBMISSION,
     }),
@@ -49,7 +45,7 @@ export class SubmissionController {
 
   @Get(':id')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: SubmissionAction.READ,
       subject: Subject.SUBMISSION,
     }),
@@ -60,7 +56,7 @@ export class SubmissionController {
 
   @Patch(':id')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: SubmissionAction.UPDATE,
       subject: Subject.SUBMISSION,
     }),
@@ -71,7 +67,7 @@ export class SubmissionController {
 
   @Patch(':id/toggle-login')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: SubmissionAction.TOGGLE_LOGIN,
       subject: Subject.SUBMISSION,
     }),

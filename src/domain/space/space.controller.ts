@@ -1,32 +1,21 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { SpaceService } from './service';
 import { CreateSpaceDto } from './dtos/create-space.dto';
 import { UpdateSpaceDto } from './dtos/update-space.dto';
 import {
   CheckPolicies,
   PolicyHandlerFactory,
-  AccessControlGuard,
   SpaceAction,
   Subject,
 } from '../../shared/access-control';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('spaces')
-@UseGuards(JwtAuthGuard, AccessControlGuard)
 export class SpaceController {
   constructor(private readonly spaceService: SpaceService) {}
 
   @Post()
   @CheckPolicies(
-    PolicyHandlerFactory.createForScope({
+    PolicyHandlerFactory.create({
       action: SpaceAction.CREATE,
       subject: Subject.SPACE,
     }),
@@ -37,7 +26,7 @@ export class SpaceController {
 
   @Get()
   @CheckPolicies(
-    PolicyHandlerFactory.createForScope({
+    PolicyHandlerFactory.create({
       action: SpaceAction.READ,
       subject: Subject.SPACE,
     }),
@@ -48,7 +37,7 @@ export class SpaceController {
 
   @Get(':id')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: SpaceAction.READ,
       subject: Subject.SPACE,
     }),
@@ -59,7 +48,7 @@ export class SpaceController {
 
   @Patch(':id')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: SpaceAction.UPDATE,
       subject: Subject.SPACE,
     }),

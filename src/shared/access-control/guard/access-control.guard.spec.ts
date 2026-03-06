@@ -15,12 +15,12 @@ describe('AccessControlGuard', () => {
     guard = new AccessControlGuard(reflector, clsService as any);
   });
 
-  const mockContext = (params: Record<string, string> = {}): ExecutionContext =>
+  const mockContext = (): ExecutionContext =>
     ({
       getHandler: () => jest.fn(),
       getClass: () => jest.fn(),
       switchToHttp: () => ({
-        getRequest: () => ({ params }),
+        getRequest: () => ({}),
       }),
     }) as any;
 
@@ -84,20 +84,5 @@ describe('AccessControlGuard', () => {
     clsService.get.mockReturnValue(ability);
 
     expect(guard.canActivate(mockContext())).toBe(false);
-  });
-
-  it('핸들러에 request params를 전달한다', () => {
-    const ability = buildAbility(({ can }) => {
-      can('Read', 'Course');
-    });
-    const handleFn = jest.fn().mockReturnValue(true);
-
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
-    jest.spyOn(reflector, 'get').mockReturnValue([{ handle: handleFn }]);
-    clsService.get.mockReturnValue(ability);
-
-    guard.canActivate(mockContext({ id: 'course-1' }));
-
-    expect(handleFn).toHaveBeenCalledWith(ability, { id: 'course-1' });
   });
 });

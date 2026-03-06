@@ -13,7 +13,6 @@ export class SubmissionService {
   ) {}
 
   async create(dto: CreateSubmissionDto): Promise<SubmissionDocument> {
-    this.accessControl.authorize('Create', 'Submission');
     return this.submissionRepo.create(dto);
   }
 
@@ -34,15 +33,20 @@ export class SubmissionService {
     id: string,
     dto: UpdateSubmissionDto,
   ): Promise<SubmissionDocument> {
-    this.accessControl.authorize('Update', 'Submission', { id });
+    const submission = await this.submissionRepo.findById(id);
+    this.accessControl.authorize('Update', 'Submission', submission.toObject());
     return this.submissionRepo.update(id, dto);
   }
 
   async toggleLogin(id: string): Promise<SubmissionDocument> {
-    this.accessControl.authorize('ToggleLogin', 'Submission', { id });
-    const doc = await this.submissionRepo.findById(id);
+    const submission = await this.submissionRepo.findById(id);
+    this.accessControl.authorize(
+      'ToggleLogin',
+      'Submission',
+      submission.toObject(),
+    );
     return this.submissionRepo.updateField(id, {
-      loginRequired: !doc.loginRequired,
+      loginRequired: !submission.loginRequired,
     });
   }
 }

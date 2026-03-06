@@ -13,7 +13,6 @@ export class UnitService {
   ) {}
 
   async create(dto: CreateUnitDto): Promise<UnitDocument> {
-    this.accessControl.authorize('Create', 'Unit');
     return this.unitRepo.create(dto);
   }
 
@@ -29,13 +28,14 @@ export class UnitService {
   }
 
   async update(id: string, dto: UpdateUnitDto): Promise<UnitDocument> {
-    this.accessControl.authorize('Update', 'Unit', { id });
+    const unit = await this.unitRepo.findById(id);
+    this.accessControl.authorize('Update', 'Unit', unit.toObject());
     return this.unitRepo.update(id, dto);
   }
 
   async clone(id: string): Promise<UnitDocument> {
-    this.accessControl.authorize('Clone', 'Unit', { id });
     const original = await this.unitRepo.findById(id);
+    this.accessControl.authorize('Clone', 'Unit', original.toObject());
     const { id: _, ...data } = original.toObject();
     return this.unitRepo.create({
       ...data,
@@ -47,7 +47,8 @@ export class UnitService {
     id: string,
     submissionId: string,
   ): Promise<UnitDocument> {
-    this.accessControl.authorize('LinkSubmission', 'Unit', { id });
+    const unit = await this.unitRepo.findById(id);
+    this.accessControl.authorize('LinkSubmission', 'Unit', unit.toObject());
     return this.unitRepo.updateField(id, { submissionId });
   }
 }

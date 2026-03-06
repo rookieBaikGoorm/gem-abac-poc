@@ -13,7 +13,6 @@ export class SpaceService {
   ) {}
 
   async create(dto: CreateSpaceDto): Promise<SpaceDocument> {
-    this.accessControl.authorize('Create', 'Space');
     return this.spaceRepo.create(dto);
   }
 
@@ -29,7 +28,8 @@ export class SpaceService {
   }
 
   async update(id: string, dto: UpdateSpaceDto): Promise<SpaceDocument> {
-    this.accessControl.authorize('Update', 'Space', { id });
+    const space = await this.spaceRepo.findById(id);
+    this.accessControl.authorize('Update', 'Space', space.toObject());
     return this.spaceRepo.update(id, dto);
   }
 }

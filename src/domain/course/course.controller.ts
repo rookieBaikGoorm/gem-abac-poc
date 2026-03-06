@@ -6,7 +6,6 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { CourseService } from './service';
 import { CreateCourseDto } from './dtos/create-course.dto';
@@ -14,20 +13,17 @@ import { UpdateCourseDto } from './dtos/update-course.dto';
 import {
   CheckPolicies,
   PolicyHandlerFactory,
-  AccessControlGuard,
   CourseAction,
   Subject,
 } from '../../shared/access-control';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('courses')
-@UseGuards(JwtAuthGuard, AccessControlGuard)
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
   @Post()
   @CheckPolicies(
-    PolicyHandlerFactory.createForScope({
+    PolicyHandlerFactory.create({
       action: CourseAction.CREATE,
       subject: Subject.COURSE,
     }),
@@ -38,7 +34,7 @@ export class CourseController {
 
   @Get()
   @CheckPolicies(
-    PolicyHandlerFactory.createForScope({
+    PolicyHandlerFactory.create({
       action: CourseAction.READ,
       subject: Subject.COURSE,
     }),
@@ -49,7 +45,7 @@ export class CourseController {
 
   @Get(':id')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: CourseAction.READ,
       subject: Subject.COURSE,
     }),
@@ -60,7 +56,7 @@ export class CourseController {
 
   @Patch(':id')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: CourseAction.UPDATE,
       subject: Subject.COURSE,
     }),

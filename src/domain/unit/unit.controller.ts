@@ -6,7 +6,6 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { UnitService } from './service';
 import { CreateUnitDto } from './dtos/create-unit.dto';
@@ -14,20 +13,17 @@ import { UpdateUnitDto } from './dtos/update-unit.dto';
 import {
   CheckPolicies,
   PolicyHandlerFactory,
-  AccessControlGuard,
   UnitAction,
   Subject,
 } from '../../shared/access-control';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('units')
-@UseGuards(JwtAuthGuard, AccessControlGuard)
 export class UnitController {
   constructor(private readonly unitService: UnitService) {}
 
   @Post()
   @CheckPolicies(
-    PolicyHandlerFactory.createForScope({
+    PolicyHandlerFactory.create({
       action: UnitAction.CREATE,
       subject: Subject.UNIT,
     }),
@@ -38,7 +34,7 @@ export class UnitController {
 
   @Get()
   @CheckPolicies(
-    PolicyHandlerFactory.createForScope({
+    PolicyHandlerFactory.create({
       action: UnitAction.READ,
       subject: Subject.UNIT,
     }),
@@ -49,7 +45,7 @@ export class UnitController {
 
   @Get(':id')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: UnitAction.READ,
       subject: Subject.UNIT,
     }),
@@ -60,7 +56,7 @@ export class UnitController {
 
   @Patch(':id')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: UnitAction.UPDATE,
       subject: Subject.UNIT,
     }),
@@ -71,7 +67,7 @@ export class UnitController {
 
   @Post(':id/clone')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: UnitAction.CLONE,
       subject: Subject.UNIT,
     }),
@@ -82,7 +78,7 @@ export class UnitController {
 
   @Patch(':id/submission/:submissionId')
   @CheckPolicies(
-    PolicyHandlerFactory.createForResource({
+    PolicyHandlerFactory.create({
       action: UnitAction.LINK_SUBMISSION,
       subject: Subject.UNIT,
     }),
