@@ -1,204 +1,123 @@
-# Attribute Base Access Control Application in Nestjs
+# gem-abac-poc
 
-## Description
+GEM 프로젝트의 ABAC(Attribute-Based Access Control) PoC 구현체입니다.
+CASL 라이브러리 기반으로 NestJS 환경에서 속성 기반 접근 제어를 구현합니다.
 
-This application uses [Nest](https://github.com/nestjs/nest) to create an Attribute Base Access Control system for your applications. It's inspired by the [Policies system that AWS uses](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_controlling.html)
+## Tech Stack
 
-The `policies` and `users` are stored in database, in this case in a MongoDB database. You can assign `policies` to `users` to give ability to access to resources or create them
+- **Runtime**: Node.js + NestJS 10
+- **Database**: MongoDB + Mongoose
+- **Auth**: Passport (JWT, Local)
+- **Access Control**: CASL (`@casl/ability`, `@casl/mongoose`)
+- **Request Context**: `nestjs-cls` (AsyncLocalStorage)
 
-## How it works
-
-In this application you have `users` which have `policies` that tell us what kind of actions they can do
-
-The `policies` are permissions for the API endpoints
-
-Let's assume that we have this `user`:
+## Project Structure
 
 ```
+src/
+├── domain/                    # 도메인 모듈
+│   ├── auth/                  # 인증 (JWT, Local Strategy)
+│   ├── space/                 # Space (최상위 리소스)
+│   ├── course/                # Course
+│   ├── unit/                  # Unit
+│   ├── submission/            # Submission
+│   ├── user/                  # User
+│   ├── group/                 # Group (역할 기반 권한 그룹)
+│   └── policy/                # Policy (사용자별 권한 정책)
+└── shared/                    # 공유 모듈
+    ├── access-control/        # ABAC 핵심 모듈
+    │   ├── constant/          # Action, Subject, Effect 상수
+    │   ├── factory/           # CaslAbilityFactory
+    │   ├── guard/             # AccessControlGuard, PolicyHandlerFactory
+    │   ├── interface/         # AppAbility, PolicyRule 타입
+    │   └── service/           # AccessControlService
+    ├── decorator/             # PublicRoute 등 공용 데코레이터
+    └── events/                # EventEmitter 래퍼
+```
+
+## ABAC Design
+
+### 권한 정책 구조
+
+- **Group**: 역할(Role) 단위로 기본 권한을 정의 (e.g. Admin, Instructor, Student)
+- **Policy**: 개별 사용자에게 추가/제한 권한을 부여
+- **Effect**: `Allow` / `Deny` — Deny가 Allow를 항상 우선 (deny-overrides)
+
+### Policy Rule 예시
+
+```json
 {
-    "email": "foo@example.com",
-    "policies": [
-        {
-            "name": "FooPolicy",
-            "effect": "Allow",
-            "actions": ["User:ListUsers"],
-            "resources": ["*"]
-        }
-    ]
+  "effect": "Allow",
+  "action": "Course:Read",
+  "subject": "Course",
+  "conditions": { "spaceId": "space-001" }
 }
 ```
 
-This `user` can `ListUsers` and that permission is neccesary to call the `GET /users` endpoint
+`conditions`는 리소스의 속성과 매칭되며, CASL의 MongoDB-style 조건으로 변환됩니다.
 
-You can restrict which resources the `users` can see:
+### Guard 동작 방식
 
-```
-{
-    "email": "foo@example.com",
-    "policies": [
-        {
-            "name": "FooPolicy",
-            "effect": "Allow",
-            "actions": ["User:UpdateUser"],
-            "resources": ["000000000001"]
-        }
-    ]
+1. `@CheckPolicies()` 데코레이터로 엔드포인트에 필요한 권한을 선언
+2. `AccessControlGuard`가 요청 시 사용자의 Group + Policy를 조합하여 CASL Ability를 생성
+3. `PolicyHandlerFactory`가 생성한 핸들러로 권한 검증 수행
+
+```typescript
+@Post()
+@CheckPolicies(
+  PolicyHandlerFactory.createForScope({
+    action: CourseAction.CREATE,
+    subject: Subject.COURSE,
+  }),
+)
+create(@Body() dto: CreateCourseDto) {
+  return this.courseService.create(dto);
 }
 ```
 
-In this case the `user` can only update the `user` with `id` equals to `000000000001`
+### Scope vs Resource
 
-### Conditions
+- **createForScope**: 목록 조회, 생성 등 특정 리소스 ID가 필요 없는 권한 검증
+- **createForResource**: 단건 조회, 수정 등 URL 파라미터의 리소스 ID를 기반으로 검증
 
-You can use `conditions` on the `policies`:
+## Getting Started
 
-```
-{
-    "email": "foo@example.com",
-    "policies": [
-        {
-            "name": "FooPolicy",
-            "effect": "Allow",
-            "actions": ["User:GetUser"],
-            "resources": ["*"],
-            "conditions": { "StringEquals": { "email": "foo@example.com" } }
-        }
-    ]
-}
-```
+### Prerequisites
 
-This `user` only can call `GET /user/:id` if the `email` of the `user` with that `id` is `foo@example.com`
+- Node.js >= 18
+- pnpm
+- MongoDB
 
-### Groups
-
-The `user` can belongs to zero or more groups. If the `user` belongs to a group it will inherit the `policies` from that group and will be added to the `policies` of the `user`
-
-### Roles
-
-A `role` is a way to give `users`  permissions without the need of changing the `policies` assign to that `user`. A `user` can assume a `role` and the `user` assumes that `role` the `user` can perform the `actions` that the `role` has in its `policies`
-
-### Organizations and units
-
-When you create a `organization` a new `unit` is created with it. One `organization` can have more than one `unit` but need to have at least one `unit`. Every `unit` can have other `units` creating the **organization tree**
-
-Every entity of the application needs to belong to a `unit`. For example, `users` or `policies` belongs to an `unit`
-
-When you do a query with an `user` you can only see entities that belongs to the `unit` of that `user`
-
-## Events
-
-You can use events to implement the observer pattern in the application. For example, when a new user is created you may want to send an email. injecting the `EventsService` class in your service you can fire events
-
-You can see more about this in the [NestJS documentation](https://docs.nestjs.com/techniques/events)
-
-## Two Factor Authentication
-
-To enable 2FA the user must have `User:Activate2FA` policy
-
-Use the endpoint `POST /iam/2FA/generate` to generate a QR code to use with some 2FA application like https://github.com/google/google-authenticator o https://authy.com
-
-After setting the application with the QR code the user needs to validate it using the endpoint `POST /iam/2FA/validate` sending the code of the application
-
-If everything is ok, every time the user wants to login to use the API needs to do it in 2 steps:
-
-- Use the endpoint `POST /auth/login` to login to get the JWT Token
-- Use the JWT token to call the `POST /auth/validate2FA` endpoint sending the token. This endpoint will generate a new JWT token valid to call the endpoints of the API
-
-## Extending the Application
-
-You can crete your own modules following [the principles described in Nestjs](https://docs.nestjs.com/modules). Then you need to implement the ABAC security in the controller
-
-- Create a list of actions like the one you can find in [user.actions](src/auth/actions/user.actions.ts) that described the operations that your users can do
-- Create the handler for that actions that te one you can find in [user.handler](src/auth/handlers/user.handler.ts)
-- Update your controller with the `@CheckPolicies` decorator to check your policies. You can find an example in the [user.controller](src/auth/controllers/user.controller.ts)
-
-### Auto generating new modules
-
-First you have to compile the generator tool
-
-```
-npm run build:generator
-```
-
-Now you can use it to generate a new module with all the code neccesary (controller, service, tests, ...)
-
-```
-npm run generate
-```
-
-The schema will be generated without any properties so you have to do it for yourself. As well, you have to create the tests that check the schema and the conditions. You can find these tests searching for `TODO` in your module tests
-
-## Installation
+### Installation
 
 ```bash
-$ npm install
+pnpm install
 ```
 
-## Running the app
+### Running
 
 ```bash
 # development
-$ npm run start
+pnpm start:dev
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# production
+pnpm build
+pnpm start:prod
 ```
 
-## Test
+### Testing
 
 ```bash
 # unit tests
-$ npm run test
+pnpm test
 
 # e2e tests
-$ npm run test:e2e
+pnpm test:e2e
 
-# test coverage
-$ npm run test:cov
+# coverage
+pnpm test:cov
 ```
 
-## CLI Utils
+## License
 
-This project has a CLI to do some actions. If you want to use it you have to compile the CLI tool
-
-```
-npm run build:cli
-```
-
-Then you can use with the command `npm run cli` follow by the command of the CLI you want to use
-
-### Organizations command
-
-The CLI has a command called `organizations` that you can use to do things related with organizations
-
-#### Create an organization
-
-You can create an `organization` using the CLI tool. Just use the sub command `creat` and pass the name that you want to give to the `organization`. Here is an example:
-
-```
-npm run cli organizations create Foo
-```
-
-This will generate an `organization` with name `Foo`. An `unit` called `Main` will be created under the `organization`
-
-### Users command
-
-The CLI has a command called `users` that you can use to do things related with users
-
-#### Create admin user
-
-You can create an admin user using the CLI tool. Just use the sub command `create-admin` and pass the unit id, email and the password you want. Here is an example:
-
-```
-npm run cli users create-admin 123456789012 foo@example.com bar
-```
-
-This will generate an user with email `foo@example.com` with password `bar`. First, it will check if a policy called `Administrator` is in the database. If there is no policy it will create it with **all** the permissions. The policy `Administrator` will be assign to the user created
-
-## TODOs and improvements
-- [ ] Cache JWT lookups
-- [ ] Prompt and generate only files selected, i.e. controller, service, e2e-test, ...
-- [ ] Generate entities files based on a JSON schema
+MIT

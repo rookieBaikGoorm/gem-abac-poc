@@ -1,7 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { IAMModule } from './iam/iam.module';
+import { SharedModule } from './shared/shared.module';
+import { AuthModule } from './domain/auth/auth.module';
+import { SpaceModule } from './domain/space/space.module';
+import { CourseModule } from './domain/course/course.module';
+import { UnitModule } from './domain/unit/unit.module';
+import { SubmissionModule } from './domain/submission/submission.module';
+import { PolicyModule } from './domain/policy/policy.module';
 
 @Module({
   imports: [
@@ -16,7 +22,13 @@ import { IAMModule } from './iam/iam.module';
         uri: config.get<string>('DATABASE_URI'),
       }),
     }),
-    IAMModule,
+    SharedModule,
+    AuthModule,
+    SpaceModule,
+    CourseModule,
+    UnitModule,
+    SubmissionModule,
+    PolicyModule,
   ],
 })
 export class AppModule {}
